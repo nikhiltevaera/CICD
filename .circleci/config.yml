@@ -1,44 +1,14 @@
 version: 2.1
 
 orbs:
-  aws-cli: circleci/aws-cli@4.0
-  aws-ecr: circleci/aws-ecr@9.0
-  node: circleci/node@4.7
-
-jobs:
-  build-teva-api-svc:
-    working_directory: ~/CICD
-    docker:
-      - image: cimg/node:16.10
-    steps:
-      - checkout
-      - aws-ecr/build_and_push_image:
-          auth:
-            - aws-cli/setup:
-                profile_name: TevaeraCICD
-                region: $AWS_REGION
-          profile_name: TevaeraCICD
-          no_output_timeout: 20m
-          setup_remote_docker: true
-          tag: "latest,$MAJOR_VERSION.$CIRCLE_BUILD_NUM"
-          repo: $AWS_ECR_REGISTRY_NAME_GAME_SERVER
-          region: "${AWS_REGION}"
-      - aws-cli/setup:
-          profile_name: TevaeraCICD
-          region: $AWS_REGION
-      - run: >-
-          aws ecs update-service --force-new-deployment --service $AWS_ECS_GS_SERVICE_NAME_OHIO --cluster $AWS_ECS_GS_CLUSTER_NAME --profile TevaeraOhio --region $AWS_REGION_OHIO
-      - discord/status:
-          webhook: $DISCORD_NOTIFICATIONS_WEBHOOK_URL
-
+  aws-ecr: circleci/aws-ecr@8.1.3
 
 workflows:
-  deployment:
+  build_and_push_image:
     jobs:
-      - build-teva-api-svc:
-          filters:
-            branches:
-              only:
-                - main
-          name: Build API Service
+      - aws-ecr/build-and-push-image:
           context: aws-backend-dev
+          create-repo: true
+          path: .
+          repo: circleci-ecr-app-demo
+          tag: "$AWS_REGION"
