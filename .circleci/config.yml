@@ -3,12 +3,11 @@ version: 2.1
 orbs:
   aws-cli: circleci/aws-cli@4.0
   aws-ecr: circleci/aws-ecr@9.0
-  discord: antonioned/discord@0.1.0
   node: circleci/node@4.7
 
 jobs:
   build-teva-api-svc:
-    working_directory: ~/tevaera-teva-run-game-server
+    working_directory: ~/CICD
     docker:
       - image: cimg/node:16.10
     steps:
@@ -16,20 +15,17 @@ jobs:
       - aws-ecr/build_and_push_image:
           auth:
             - aws-cli/setup:
-                profile_name: TevaeraOhio
-                region: AWS_REGION_OHIO
-          profile_name: TevaeraOhio
-          extra_build_args: "--compress"
+                profile_name: TevaeraCICD
+                region: $AWS_REGION
+          profile_name: TevaeraCICD
           no_output_timeout: 20m
-          build_path: ./nakama
-          path: ./nakama
           setup_remote_docker: true
           tag: "latest,$MAJOR_VERSION.$CIRCLE_BUILD_NUM"
           repo: $AWS_ECR_REGISTRY_NAME_GAME_SERVER
-          region: "${AWS_REGION_OHIO}"
+          region: "${AWS_REGION}"
       - aws-cli/setup:
-          profile_name: TevaeraOhio
-          region: AWS_REGION_OHIO
+          profile_name: TevaeraCICD
+          region: $AWS_REGION
       - run: >-
           aws ecs update-service --force-new-deployment --service $AWS_ECS_GS_SERVICE_NAME_OHIO --cluster $AWS_ECS_GS_CLUSTER_NAME --profile TevaeraOhio --region $AWS_REGION_OHIO
       - discord/status:
@@ -43,6 +39,6 @@ workflows:
           filters:
             branches:
               only:
-                - development
-          name: Build Game Server & deploy it to Ohio
-          context: development
+                - main
+          name: Build API Service
+          context: aws-backend-dev
